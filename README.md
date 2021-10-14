@@ -1,0 +1,1 @@
+This Python utility is distributed as a project for the PyCharm IDE.
