@@ -48,7 +48,6 @@ class ChannelAnalyzer:
             if channel not in self.mismatch_counts:
                 return channel
 
-
     def analyze(self, frame, msg):
         self.update_channel_count(frame)
         self.update_dlc_mismatch(frame, msg)
@@ -106,6 +105,8 @@ if __name__ == '__main__':
     export_rows = []
     export_fieldnames = get_export_fieldnames()
 
+    dotCount = 0
+
     with can.BLFReader(blf_file) as reader:
         channel_analyzer = ChannelAnalyzer()
         for frame in reader:
@@ -136,6 +137,12 @@ if __name__ == '__main__':
                 if not accept_message(msg):
                     continue
                 nFilteredFrames += 1
+                dotCount += 1
+                if dotCount > 80:
+                    print('.')
+                    dotCount = 0
+                else:
+                    print('.', end='')
 
                 decoded_data = msg.decode(frame.data)
                 filtered_signals = filter_signals(msg, decoded_data)
