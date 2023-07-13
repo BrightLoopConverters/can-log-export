@@ -6,6 +6,9 @@ import csv
 
 SAMPLE_AND_HOLD = True
 TARGET_CHANNEL = 0
+
+ACCEPT_ALL_DATA_SOURCES = False
+
 DATA_SOURCES = {
     'MESSAGE_1': [
         'PARAM_1_x',
@@ -58,27 +61,25 @@ def unique_name(message_name, signal_name):
     signal_name = signal_name.removeprefix('DCDC_')
     return '{}::{}'.format(message_name, signal_name)
 
-
-def get_export_fieldnames():
-    fieldnames = ['timestamp']
-    for message_name in DATA_SOURCES:
-        for signal_name in DATA_SOURCES[message_name]:
-            fieldnames.append(unique_name(message_name, signal_name))
-    return fieldnames
-
-
 def accept_message(message):
     desired_message_names = DATA_SOURCES.keys()
-    return message.name in desired_message_names
+    return (message.name in desired_message_names) or ACCEPT_ALL_DATA_SOURCES
 
 
 def filter_signals(message, signals):
     extracted_signals = {}
-    if message.name in DATA_SOURCES:
-        desired_signal_names = DATA_SOURCES[message.name]
-        for signal_name in desired_signal_names:
-            value = signals[signal_name]
-            extracted_signals[unique_name(message.name, signal_name)] = value
+    desired_signal_names = {}
+
+    if ACCEPT_ALL_DATA_SOURCES:
+        desired_signal_names = signals
+    else:
+        if message.name in DATA_SOURCES:
+            desired_signal_names = DATA_SOURCES[message.name]
+
+    for signal_name in desired_signal_names:
+        value = signals[signal_name]
+        extracted_signals[unique_name(message.name, signal_name)] = value
+
     return extracted_signals
 
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     maxTimestamp = None
 
     export_rows = []
-    export_fieldnames = get_export_fieldnames()
+    export_fieldnames = ['timestamp']
 
     dotCount = 0
 
@@ -146,7 +147,12 @@ if __name__ == '__main__':
 
                 decoded_data = msg.decode(frame.data)
                 filtered_signals = filter_signals(msg, decoded_data)
-                filtered_signals['timestamp'] = frame.timestamp
+
+                for signal_name in filtered_signals.keys():
+                    if signal_name not in export_fieldnames:
+                        export_fieldnames.append(signal_name)
+
+                filtered_signals['timestamp'] = datetime.fromtimestamp(frame.timestamp)
                 export_rows.append(filtered_signals)
 
                 if SAMPLE_AND_HOLD:
@@ -160,6 +166,7 @@ if __name__ == '__main__':
             except KeyError:
                 continue
 
+        print('')
         print('> SHA256 of BLF file: {}'.format(get_sha(blf_file)))
         print('> Extracted {}/{} frames based on the DBC'
               .format(nListedFrames, nFrames))
