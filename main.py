@@ -8,6 +8,7 @@ SAMPLE_AND_HOLD = True
 TARGET_CHANNEL = 0
 
 ACCEPT_ALL_DATA_SOURCES = False
+RELATIVE_TIME = False
 
 DATA_SOURCES = {
     'MESSAGE_1': [
@@ -60,6 +61,7 @@ def unique_name(message_name, signal_name):
     message_name = message_name.removeprefix('DCDC_')
     signal_name = signal_name.removeprefix('DCDC_')
     return '{}::{}'.format(message_name, signal_name)
+
 
 def accept_message(message):
     desired_message_names = DATA_SOURCES.keys()
@@ -122,7 +124,7 @@ if __name__ == '__main__':
                 channel_analyzer.analyze(frame, msg)
 
                 # Update timestamp range
-                timestamp = datetime.fromtimestamp(frame.timestamp).time()
+                timestamp = datetime.fromtimestamp(frame.timestamp)
 
                 if minTimestamp is None or timestamp < minTimestamp:
                     minTimestamp = timestamp
@@ -152,7 +154,9 @@ if __name__ == '__main__':
                     if signal_name not in export_fieldnames:
                         export_fieldnames.append(signal_name)
 
-                filtered_signals['timestamp'] = datetime.fromtimestamp(frame.timestamp)
+                if RELATIVE_TIME:
+                    timestamp = timestamp - minTimestamp
+                filtered_signals['timestamp'] = timestamp
                 export_rows.append(filtered_signals)
 
                 if SAMPLE_AND_HOLD:
