@@ -1,6 +1,5 @@
 import can
 import cantools
-from datetime import datetime
 import csv
 from datasources import DATA_SOURCES_EXAMPLE
 from logexport import *
@@ -26,9 +25,6 @@ if __name__ == '__main__':
     nListedFrames = 0
     nFilteredFrames = 0
 
-    minTimestamp = None
-    maxTimestamp = None
-
     export_rows = []
     export_fieldnames = ['timestamp']
 
@@ -36,6 +32,7 @@ if __name__ == '__main__':
 
     dbc_filter = DbcFilter(partly_accepted=DATA_SOURCES_EXAMPLE)
     channel_analyzer = ChannelAnalyzer()
+    timestamp_recorder = TimestampRecorder(RELATIVE_TIME)
 
     with can.BLFReader(blf_file) as reader:
         for frame in reader:
@@ -47,15 +44,7 @@ if __name__ == '__main__':
                 msg = db.get_message_by_frame_id(frame.arbitration_id)
                 nListedFrames += 1
                 channel_analyzer.analyze(frame, msg)
-
-                # Update timestamp range
-                timestamp = datetime.fromtimestamp(frame.timestamp)
-
-                if minTimestamp is None or timestamp < minTimestamp:
-                    minTimestamp = timestamp
-
-                if maxTimestamp is None or timestamp > maxTimestamp:
-                    maxTimestamp = timestamp
+                timestamp = timestamp_recorder.record(frame)
 
                 # Filter by channel
                 if frame.channel is not TARGET_CHANNEL:
@@ -76,9 +65,7 @@ if __name__ == '__main__':
                     if signal_name not in export_fieldnames:
                         export_fieldnames.append(signal_name)
 
-                if RELATIVE_TIME:
-                    timestamp = timestamp - minTimestamp
-                to_write['timestamp'] = timestamp
+                to_write['timestamp'] = timestamp_recorder.format(timestamp)
                 export_rows.append(to_write)
 
                 if SAMPLE_AND_HOLD:

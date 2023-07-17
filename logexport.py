@@ -1,4 +1,5 @@
 import hashlib
+from datetime import datetime
 
 
 def get_sha(filename):
@@ -24,6 +25,24 @@ def sample_and_hold(rows):
         for key in rows[-2]:
             if key not in rows[-1]:
                 rows[-1][key] = rows[-2][key]
+
+
+class TimestampRecorder:
+    def __init__(self, relative):
+        self.min = None
+        self.max = None
+        self.relative = relative
+
+    def record(self, frame):
+        timestamp = datetime.fromtimestamp(frame.timestamp)
+        if self.min is None or timestamp < self.min:
+            self.min = timestamp
+        if self.max is None or timestamp > self.max:
+            self.max = timestamp
+        return timestamp
+
+    def format(self, timestamp):
+        return timestamp - self.min if self.relative else timestamp
 
 
 class ChannelAnalyzer:

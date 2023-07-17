@@ -11,6 +11,6 @@ Conversely, if `accept_all` is `False`, then only signals that are:
 
 ### Relative Timestamping
 
-If the variable `RELATIVE_TIME` is `True`, then the CAN frames will be timestamped relative to the oldest in the file.
+If the `TimestampRecorder` object used is constructed by passing `use_relative_time=true`, then its `format()` method will timestamp the CAN frames relative to the oldest in the file.
 
-However, if `RELATIVE_TIME` is `False`, then the CAN frames will be timestamped as completely as possible based on the information contained in the source file.
+Otherwise, the CAN frames will be timestamped as completely as possible based on the information contained in the source file.
