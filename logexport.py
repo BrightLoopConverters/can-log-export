@@ -106,7 +106,7 @@ class DbcFilter:
         return accepted_signal_values
 
 
-class BlfExport:
+class LogExport:
     def __init__(self, dbc_file, dbc_filter,
                  rewrite_signals=None,
                  use_sample_and_hold=False,
@@ -119,6 +119,7 @@ class BlfExport:
         self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
         self.target_channel = target_channel
+        self.total_frame_count = 0
         self.listed_frame_count = 0
         self.accepted_frame_count = 0
         self.dot_count = 0
@@ -127,14 +128,15 @@ class BlfExport:
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
 
-    def process_frame(self, frame):
+    def process_frame(self, frame, allow_truncated=False):
+        self.total_frame_count += 1
         try:
             msg = self.dbc.get_message_by_frame_id(frame.arbitration_id)
         except KeyError:
             return
-        self.process_message(frame, msg)
+        self.process_message(frame, msg, allow_truncated)
 
-    def process_message(self, frame, msg):
+    def process_message(self, frame, msg, allow_truncated):
         self.listed_frame_count += 1
         self.channel_analyzer.analyze(frame, msg)
         timestamp = self.timestamp_recorder.record(frame)
@@ -148,7 +150,7 @@ class BlfExport:
         self.accepted_frame_count += 1
         self.dot_count = print_progress_dot(self.dot_count)
 
-        decoded_values = msg.decode(frame.data)
+        decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated)
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
         if self.rewrite_signals is None:
@@ -166,10 +168,13 @@ class BlfExport:
             sample_and_hold(self.rows)
 
     def print_info(self):
+        print('')
         print('> Time range of the frames is from {} to {}'
               .format(self.timestamp_recorder.min, self.timestamp_recorder.max))
         print('> Specified channel:', self.target_channel)
         print('> Most likely channel:', self.channel_analyzer.guess_channel())
+        print('> Extracted {}/{} frames based on the DBC'
+              .format(self.listed_frame_count, self.total_frame_count))
         print('> Accepted frame count:', self.accepted_frame_count)
 
     def write_csv(self, filename):

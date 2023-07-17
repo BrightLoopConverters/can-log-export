@@ -10,23 +10,34 @@ def unique_name(message_name, signal_name):
 
 
 def export_from_blf():
-    source_file = '<relevant data file>'
+    source_file = '<relevant BLF data file>'
+    print('> SHA256 of log file: {}'.format(get_sha(source_file)))
     reader = can.BLFReader(source_file)
     dbc_file = '<relevant DBC file>'
     dbc_filter = DbcFilter(partly_accepted=DATA_SOURCES_EXAMPLE)
-    export = BlfExport(dbc_file, dbc_filter, unique_name)
 
+    export = LogExport(dbc_file, dbc_filter, unique_name)
     for frame in reader:
         export.process_frame(frame)
 
-    print('')
-    print('> SHA256 of BLF file: {}'.format(get_sha(source_file)))
-    print('> Extracted {}/{} frames based on the DBC'
-          .format(export.listed_frame_count, reader.object_count))
+    export.print_info()
+    export.write_csv(source_file)
+
+
+def export_from_trc():
+    source_file = '<relevant TRC data file>'
+    print('> SHA256 of log file: {}'.format(get_sha(source_file)))
+    reader = can.TRCReader(source_file)
+    dbc_file = '<relevant DBC file>'
+    dbc_filter = DbcFilter(accept_all=True)
+
+    export = LogExport(dbc_file, dbc_filter, target_channel=1)
+    for frame in reader:
+        export.process_frame(frame, allow_truncated=True)
 
     export.print_info()
     export.write_csv(source_file)
 
 
 if __name__ == '__main__':
-    export_from_blf()
+    export_from_trc()
