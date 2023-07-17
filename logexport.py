@@ -1,5 +1,7 @@
 import hashlib
 from datetime import datetime
+import cantools
+import csv
 
 
 def get_sha(filename):
@@ -102,3 +104,77 @@ class DbcFilter:
         accepted_signal_values = {name: value for (name, value) in signal_values.items()
                                   if name in accepted_signal_names}
         return accepted_signal_values
+
+
+class BlfExport:
+    def __init__(self, dbc_file, dbc_filter,
+                 rewrite_signals=None,
+                 use_sample_and_hold=False,
+                 use_relative_time=False,
+                 target_channel=0):
+
+        self.dbc = cantools.database.load_file(dbc_file)
+        self.dbc_filter = dbc_filter
+        self.rewrite_signals = rewrite_signals
+        self.use_sample_and_hold = use_sample_and_hold
+        self.use_relative_time = use_relative_time
+        self.target_channel = target_channel
+        self.listed_frame_count = 0
+        self.accepted_frame_count = 0
+        self.dot_count = 0
+        self.rows = []
+        self.fieldnames = ['timestamp']
+        self.channel_analyzer = ChannelAnalyzer()
+        self.timestamp_recorder = TimestampRecorder(use_relative_time)
+
+    def process_frame(self, frame):
+        try:
+            msg = self.dbc.get_message_by_frame_id(frame.arbitration_id)
+        except KeyError:
+            return
+        self.process_message(frame, msg)
+
+    def process_message(self, frame, msg):
+        self.listed_frame_count += 1
+        self.channel_analyzer.analyze(frame, msg)
+        timestamp = self.timestamp_recorder.record(frame)
+
+        if frame.channel is not self.target_channel:
+            return
+
+        if not self.dbc_filter.is_message_accepted(msg):
+            return
+
+        self.accepted_frame_count += 1
+        self.dot_count = print_progress_dot(self.dot_count)
+
+        decoded_values = msg.decode(frame.data)
+        to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
+
+        if self.rewrite_signals is None:
+            to_write = to_keep
+        else:
+            to_write = {self.rewrite_signals(msg.name, signal): value
+                        for (signal, value) in to_keep.items()}
+
+        self.fieldnames += [name for name in to_write if name not in self.fieldnames]
+
+        to_write['timestamp'] = self.timestamp_recorder.format(timestamp)
+        self.rows.append(to_write)
+
+        if self.use_sample_and_hold:
+            sample_and_hold(self.rows)
+
+    def print_info(self):
+        print('> Time range of the frames is from {} to {}'
+              .format(self.timestamp_recorder.min, self.timestamp_recorder.max))
+        print('> Specified channel:', self.target_channel)
+        print('> Most likely channel:', self.channel_analyzer.guess_channel())
+        print('> Accepted frame count:', self.accepted_frame_count)
+
+    def write_csv(self, filename):
+        with open(filename + '.csv', 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=self.fieldnames)
+            writer.writeheader()
+            writer.writerows(self.rows)
+        print('> SHA256 of CSV file: {}'.format(get_sha(filename + '.csv')))
