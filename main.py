@@ -3,25 +3,13 @@ import cantools
 import hashlib
 from datetime import datetime
 import csv
+from datasources import DATA_SOURCES_EXAMPLE
+from logexport import *
 
 SAMPLE_AND_HOLD = True
 TARGET_CHANNEL = 0
 
-ACCEPT_ALL_DATA_SOURCES = False
 RELATIVE_TIME = False
-
-DATA_SOURCES = {
-    'MESSAGE_1': [
-        'PARAM_1_x',
-        'PARAM_1_y',
-        'PARAM_1_z'
-    ],
-    'MESSAGE_2': [
-        'PARAM_2_x',
-        'PARAM_2_y',
-        'PARAM_2_z'
-    ]
-}
 
 class ChannelAnalyzer:
     def __init__(self):
@@ -63,28 +51,6 @@ def unique_name(message_name, signal_name):
     return '{}::{}'.format(message_name, signal_name)
 
 
-def accept_message(message):
-    desired_message_names = DATA_SOURCES.keys()
-    return (message.name in desired_message_names) or ACCEPT_ALL_DATA_SOURCES
-
-
-def filter_signals(message, signals):
-    extracted_signals = {}
-    desired_signal_names = {}
-
-    if ACCEPT_ALL_DATA_SOURCES:
-        desired_signal_names = signals
-    else:
-        if message.name in DATA_SOURCES:
-            desired_signal_names = DATA_SOURCES[message.name]
-
-    for signal_name in desired_signal_names:
-        value = signals[signal_name]
-        extracted_signals[unique_name(message.name, signal_name)] = value
-
-    return extracted_signals
-
-
 def get_sha(filename):
     sha256_hash = hashlib.sha256()
     with open(filename, "rb") as f:
@@ -109,6 +75,8 @@ if __name__ == '__main__':
     export_fieldnames = ['timestamp']
 
     dotCount = 0
+
+    dbc_filter = DbcFilter(partly_accepted=DATA_SOURCES_EXAMPLE)
 
     with can.BLFReader(blf_file) as reader:
         channel_analyzer = ChannelAnalyzer()
@@ -137,7 +105,7 @@ if __name__ == '__main__':
                     continue
 
                 # Filter out non-target messages
-                if not accept_message(msg):
+                if not dbc_filter.is_message_accepted(msg):
                     continue
                 nFilteredFrames += 1
                 dotCount += 1
@@ -147,21 +115,23 @@ if __name__ == '__main__':
                 else:
                     print('.', end='')
 
-                decoded_data = msg.decode(frame.data)
-                filtered_signals = filter_signals(msg, decoded_data)
+                decoded_values = msg.decode(frame.data)
+                to_keep = dbc_filter.keep_accepted_signals(msg, decoded_values)
+                to_write = {unique_name(msg.name, signal): value
+                            for (signal, value) in to_keep.items()}
 
-                for signal_name in filtered_signals.keys():
+                for signal_name in to_write.keys():
                     if signal_name not in export_fieldnames:
                         export_fieldnames.append(signal_name)
 
                 if RELATIVE_TIME:
                     timestamp = timestamp - minTimestamp
-                filtered_signals['timestamp'] = timestamp
-                export_rows.append(filtered_signals)
+                to_write['timestamp'] = timestamp
+                export_rows.append(to_write)
 
                 if SAMPLE_AND_HOLD:
                     for key in export_fieldnames:
-                        if key not in filtered_signals and len(export_rows) > 1:
+                        if key not in to_write and len(export_rows) > 1:
                             prev = ''
                             if key in export_rows[-2]:
                                 previous_value = export_rows[-2][key]
