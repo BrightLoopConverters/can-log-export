@@ -16,7 +16,8 @@ def export_from_blf():
     dbc_file = '<relevant DBC file>'
     dbc_filter = DbcFilter(partly_accepted=DATA_SOURCES_EXAMPLE)
 
-    export = LogExport(dbc_file, dbc_filter, unique_name)
+    export = LogExport(dbc_file, dbc_filter, unique_name,
+                       expected_frame_count=reader.object_count)
     for frame in reader:
         export.process_frame(frame)
 
@@ -31,7 +32,8 @@ def export_from_trc():
     dbc_file = '<relevant DBC file>'
     dbc_filter = DbcFilter(accept_all=True)
 
-    export = LogExport(dbc_file, dbc_filter, target_channel=1)
+    export = LogExport(dbc_file, dbc_filter, target_channel=1,
+                       expected_frame_count=count_lines(source_file))
     for frame in reader:
         export.process_frame(frame, allow_truncated=True)
 

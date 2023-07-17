@@ -12,14 +12,10 @@ def get_sha(filename):
     return sha256_hash.hexdigest()
 
 
-def print_progress_dot(dot_count):
-    dot_count += 1
-    if dot_count > 80:
-        print('.')
-        dot_count = 0
-    else:
-        print('.', end='')
-    return dot_count
+def count_lines(file):
+    with open(file, "rbU") as f:
+        num_lines = sum(1 for _ in f)
+    return num_lines
 
 
 def sample_and_hold(rows):
@@ -111,7 +107,8 @@ class LogExport:
                  rewrite_signals=None,
                  use_sample_and_hold=False,
                  use_relative_time=False,
-                 target_channel=0):
+                 target_channel=0,
+                 expected_frame_count=None):
 
         self.dbc = cantools.database.load_file(dbc_file)
         self.dbc_filter = dbc_filter
@@ -119,6 +116,7 @@ class LogExport:
         self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
         self.target_channel = target_channel
+        self.expected_frame_count = expected_frame_count
         self.total_frame_count = 0
         self.listed_frame_count = 0
         self.accepted_frame_count = 0
@@ -148,7 +146,7 @@ class LogExport:
             return
 
         self.accepted_frame_count += 1
-        self.dot_count = print_progress_dot(self.dot_count)
+        self.print_progress_dot()
 
         decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated)
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
@@ -166,6 +164,21 @@ class LogExport:
 
         if self.use_sample_and_hold:
             sample_and_hold(self.rows)
+
+    def print_progress_dot(self):
+        if self.expected_frame_count is None:
+            self.dot_count += 1
+            if self.dot_count > 80:
+                print('.')
+                self.dot_count = 0
+            else:
+                print('.', end='')
+        else:
+            progress = self.total_frame_count/self.expected_frame_count
+            dot = round(80*progress)
+            if dot > self.dot_count:
+                self.dot_count = dot
+                print('.', end='')
 
     def print_info(self):
         print('')
