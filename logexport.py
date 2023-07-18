@@ -2,6 +2,8 @@ import hashlib
 from datetime import datetime
 import cantools
 import csv
+import sys
+from tqdm import tqdm
 
 
 def get_sha(filename):
@@ -120,13 +122,15 @@ class LogExport:
         self.total_frame_count = 0
         self.listed_frame_count = 0
         self.accepted_frame_count = 0
-        self.dot_count = 0
+        self.progressbar = tqdm(total=expected_frame_count, desc='> Processing frames',
+                                unit='frames', file=sys.stdout, ncols=100)
         self.rows = []
         self.fieldnames = ['timestamp']
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
 
     def process_frame(self, frame, allow_truncated=False):
+        self.progressbar.update(1)
         self.total_frame_count += 1
         try:
             msg = self.dbc.get_message_by_frame_id(frame.arbitration_id)
@@ -146,7 +150,6 @@ class LogExport:
             return
 
         self.accepted_frame_count += 1
-        self.print_progress_dot()
 
         decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated)
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
@@ -165,23 +168,8 @@ class LogExport:
         if self.use_sample_and_hold:
             sample_and_hold(self.rows)
 
-    def print_progress_dot(self):
-        if self.expected_frame_count is None:
-            self.dot_count += 1
-            if self.dot_count > 80:
-                print('.')
-                self.dot_count = 0
-            else:
-                print('.', end='')
-        else:
-            progress = self.total_frame_count/self.expected_frame_count
-            dot = round(80*progress)
-            if dot > self.dot_count:
-                self.dot_count = dot
-                print('.', end='')
-
     def print_info(self):
-        print('')
+        self.progressbar.close()
         print('> Time range of the frames is from {} to {}'
               .format(self.timestamp_recorder.min, self.timestamp_recorder.max))
         print('> Specified channel:', self.target_channel)
