@@ -1,12 +1,6 @@
 import can
-from datasources import DATA_SOURCES_EXAMPLE
+from helpers_dchv import *
 from logexport import *
-
-
-def unique_name(message_name, signal_name):
-    message_name = message_name.removeprefix('DCDC_')
-    signal_name = signal_name.removeprefix('DCDC_')
-    return '{}::{}'.format(message_name, signal_name)
 
 
 def export_from_blf():
@@ -16,7 +10,7 @@ def export_from_blf():
     dbc_file = '<relevant DBC file>'
     dbc_filter = DbcFilter(partly_accepted=DATA_SOURCES_EXAMPLE)
 
-    export = LogExport(dbc_file, dbc_filter, unique_name,
+    export = LogExport(dbc_file, dbc_filter, dchv_shortname,
                        expected_frame_count=reader.object_count)
     for frame in reader:
         export.process_frame(frame)
