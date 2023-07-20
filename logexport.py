@@ -126,6 +126,7 @@ class LogExport:
                                 unit='frames', file=sys.stdout, ncols=100)
         self.rows = []
         self.fieldnames = ['timestamp']
+        self.fieldunits = {}
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
 
@@ -154,13 +155,16 @@ class LogExport:
         decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated)
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
-        if self.rewrite_signals is None:
-            to_write = to_keep
-        else:
-            to_write = {self.rewrite_signals(msg.name, signal): value
-                        for (signal, value) in to_keep.items()}
-
-        self.fieldnames += [name for name in to_write if name not in self.fieldnames]
+        to_write = {}
+        for (signal_name, value) in to_keep.items():
+            renamed = self.signal_renamer(msg.name, signal_name)
+            to_write[renamed] = value
+            if renamed not in self.fieldnames:
+                self.fieldnames.append(renamed)
+                for signal in msg.signals:
+                    if signal.name is signal_name:
+                        if signal.unit is not None:
+                            self.fieldunits[renamed] = signal.unit.encode('cp1252').decode('utf8')
 
         to_write['timestamp'] = self.timestamp_recorder.format(timestamp)
         self.rows.append(to_write)
@@ -182,5 +186,7 @@ class LogExport:
         with open(filename + '.csv', 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=self.fieldnames)
             writer.writeheader()
+            writer.writerows([self.fieldunits])
+            print(self.fieldunits)
             writer.writerows(self.rows)
         print('> SHA256 of CSV file: {}'.format(get_sha(filename + '.csv')))
