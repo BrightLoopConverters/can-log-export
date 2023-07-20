@@ -106,7 +106,7 @@ class DbcFilter:
 
 class LogExport:
     def __init__(self, dbc_file, dbc_filter,
-                 rewrite_signals=None,
+                 signal_renamer=lambda x, y: x,
                  use_sample_and_hold=False,
                  use_relative_time=False,
                  target_channel=0,
@@ -114,7 +114,7 @@ class LogExport:
 
         self.dbc = cantools.database.load_file(dbc_file)
         self.dbc_filter = dbc_filter
-        self.rewrite_signals = rewrite_signals
+        self.signal_renamer = signal_renamer
         self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
         self.target_channel = target_channel
