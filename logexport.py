@@ -152,7 +152,8 @@ class LogExport:
 
         self.accepted_frame_count += 1
 
-        decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated)
+        decoded_values = msg.decode(frame.data, allow_truncated=allow_truncated,
+                                    decode_choices=False)
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
         to_write = {}
