@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/can_scripts.iml" filepath="$PROJECT_DIR$/.idea/can_scripts.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/logexport.iml" filepath="$PROJECT_DIR$/.idea/logexport.iml" />
     </modules>
   </component>
 </project>
