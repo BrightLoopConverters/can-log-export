@@ -106,7 +106,7 @@ class DbcFilter:
 
 class LogExport:
     def __init__(self, dbc_file, dbc_filter,
-                 signal_renamer=lambda x, y: x,
+                 signal_renamer=lambda x, y: y,
                  use_sample_and_hold=False,
                  use_relative_time=False,
                  target_channel=0,
