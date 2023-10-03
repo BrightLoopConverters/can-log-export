@@ -1,4 +1,2 @@
-*.blf
-*.csv
 *.ini
 __pycache__
