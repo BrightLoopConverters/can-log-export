@@ -57,12 +57,12 @@ class ChannelAnalyzer:
                 self.mismatch_counts[frame.channel] = 0
             self.mismatch_counts[frame.channel] += 1
 
-        if msg.name not in self.mismatch_values:
-            self.mismatch_values[msg.name] = {}
-        if frame.channel not in self.mismatch_values[msg.name]:
-            self.mismatch_values[msg.name][frame.channel] = []
-        if frame.dlc not in self.mismatch_values[msg.name][frame.channel]:
-            self.mismatch_values[msg.name][frame.channel].append(frame.dlc)
+            if msg.name not in self.mismatch_values:
+                self.mismatch_values[msg.name] = {}
+            if frame.channel not in self.mismatch_values[msg.name]:
+                self.mismatch_values[msg.name][frame.channel] = []
+            if frame.dlc not in self.mismatch_values[msg.name][frame.channel]:
+                self.mismatch_values[msg.name][frame.channel].append(frame.dlc)
 
     def update_channel_count(self, frame):
         if frame.channel not in self.frame_counts:
