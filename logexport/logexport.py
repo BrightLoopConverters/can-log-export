@@ -80,7 +80,12 @@ class ChannelAnalyzer:
 
 
 class DbcFilter:
-    def __init__(self, accept_all=False, fully_accepted={}, partly_accepted={}):
+    def __init__(self, accept_all=False, fully_accepted=None, partly_accepted=None):
+        if fully_accepted is None:
+            fully_accepted = {}
+        if partly_accepted is None:
+            partly_accepted = {}
+            
         self.accept_all = accept_all
         self.fully_accepted = fully_accepted
         self.partly_accepted = partly_accepted
