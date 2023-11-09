@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime
 import cantools
+from cantools import database
 import csv
 import sys
 from tqdm import tqdm
