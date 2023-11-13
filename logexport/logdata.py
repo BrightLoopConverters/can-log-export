@@ -184,11 +184,11 @@ class LogDataTree:
 
         if common_signals_row:
             common_signals_row['timestamp'] = timestamp
-            self.find_group(msg).rows.append(common_signals_row)
+            self.find_group(msg).add_field_values(common_signals_row)
         if muxed_signals_row:
             muxed_signals_row['timestamp'] = timestamp
             muxvalue = decoded_values[self.cached_multiplexors[msg.name]]
-            self.find_group(msg, muxvalue).rows.append(muxed_signals_row)
+            self.find_group(msg, muxvalue).add_field_values(muxed_signals_row)
 
     def find_group(self, msg, muxvalue=None):
         if muxvalue is None:
