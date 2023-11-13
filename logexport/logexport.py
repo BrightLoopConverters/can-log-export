@@ -1,5 +1,7 @@
 import hashlib
 from datetime import datetime
+
+import can
 import cantools
 from cantools import database
 import sys
@@ -21,6 +23,42 @@ def count_lines(file):
     with open(file, "rbU") as f:
         num_lines = sum(1 for _ in f)
     return num_lines
+
+
+# Attempts to decode the file using the ASC format
+def try_decode_asc(file):
+    try:
+        reader = can.ASCReader(file)
+        frame = next(iter(reader))
+        print('> Successfully decoded file as ASC')
+        return [can.ASCReader, count_lines(file)]
+    except (UnicodeDecodeError, StopIteration) as e:
+        print('> Failed to decode file as ASC')
+        return [None, 0]
+
+
+# Attempts to decode the file using the TRC format
+def try_decode_trc(file):
+    try:
+        reader = can.TRCReader(file)
+        frame = next(iter(reader))
+        print('> Successfully decoded file as TRC')
+        return [can.TRCReader, count_lines(file)]
+    except (UnicodeDecodeError, ValueError) as e:
+        print('> Failed to decode file as TRC')
+        return [None, 0]
+
+
+# Attempts to decode the file using the BLF format
+def try_decode_blf(file):
+    try:
+        reader = can.BLFReader(file)
+        frame = next(iter(reader))
+        print('> Successfully decoded file as BLF')
+        return [can.BLFReader, reader.object_count]
+    except can.io.blf.BLFParseError as e:
+        print('> Failed to decode file as BLF')
+        return [None, 0]
 
 
 class TimestampRecorder:
