@@ -2,10 +2,9 @@ import hashlib
 from datetime import datetime
 import cantools
 from cantools import database
-import csv
 import sys
 from tqdm import tqdm
-
+from logdata import *
 
 def get_sha(filename):
     sha256_hash = hashlib.sha256()
@@ -130,11 +129,9 @@ class LogExport:
         self.accepted_frame_count = 0
         self.progressbar = tqdm(total=expected_frame_count, desc='> Processing frames',
                                 unit='frames', file=sys.stdout, ncols=100)
-        self.rows = []
-        self.fieldnames = ['timestamp']
-        self.fieldunits = {}
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
+        self.data = LogDataTable(signal_renamer)
 
     def process_frame(self, frame, allow_truncated=False):
         self.progressbar.update(1)
@@ -168,22 +165,12 @@ class LogExport:
 
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
-        to_write = {}
-        for (signal_name, value) in to_keep.items():
-            renamed = self.signal_renamer(msg.name, signal_name)
-            to_write[renamed] = value
-            if renamed not in self.fieldnames:
-                self.fieldnames.append(renamed)
-                for signal in msg.signals:
-                    if signal.name is signal_name:
-                        if signal.unit is not None:
-                            self.fieldunits[renamed] = signal.unit.encode('cp1252').decode('utf8')
-
-        to_write['timestamp'] = self.timestamp_recorder.format(timestamp)
-        self.rows.append(to_write)
+        to_write = {'timestamp': self.timestamp_recorder.format(timestamp)}
+        self.data.create_fields(msg)
+        self.data.add_field_values(msg, decoded_values, to_write['timestamp'])
 
         if self.use_sample_and_hold:
-            sample_and_hold(self.rows)
+            sample_and_hold(self.data.group.rows)
 
     def print_info(self):
         self.progressbar.close()
@@ -195,11 +182,7 @@ class LogExport:
               .format(self.listed_frame_count, self.total_frame_count))
         print('> Accepted frame count:', self.accepted_frame_count)
 
-    def write_csv(self, filename):
-        with open(filename + '.csv', 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=self.fieldnames)
-            writer.writeheader()
-            writer.writerows([self.fieldunits])
-            print(self.fieldunits)
-            writer.writerows(self.rows)
-        print('> SHA256 of CSV file: {}'.format(get_sha(filename + '.csv')))
+    def write_csv(self, filepath):
+        group = self.data.group
+        print(f'> Writing CSV file for {group.name}')
+        group.write_csv(filepath, ';', use_group_name=False)
