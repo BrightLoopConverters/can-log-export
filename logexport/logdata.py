@@ -22,15 +22,29 @@ class LogDataGroup:
         self.fieldnames = ['timestamp']
         self.units = {}
         self.rows = []
+        self.counts = {'timestamp': 0}
 
     def add_field(self, msg, signal_name):
         fieldname = self.signal_renamer(msg.name, signal_name)
         self.fieldnames.append(fieldname)
+        self.counts[fieldname] = 0
         unit = get_signal_unit(msg, signal_name)
         if unit:
             self.units[fieldname] = unit
 
+    def add_field_values(self, decoded_values):
+        self.rows.append(decoded_values)
+        for fieldname in decoded_values:
+            self.counts[fieldname] += 1
+
     def write_csv(self, filepath, delimiter=',', use_group_name=True):
+        # Columns containing no values due to the applied filtering are removed
+        # from the list of fields to be written in the CSV.
+        for fieldname in self.counts:
+            if self.counts[fieldname] == 0:
+                self.fieldnames.remove(fieldname)
+                if fieldname in self.units:
+                    del self.units[fieldname]
 
         directory = os.path.dirname(filepath)
 
@@ -94,7 +108,7 @@ class LogDataTable:
         if signals_row:
             signals_row['timestamp'] = timestamp
             group = self.find_group(msg)
-            group.rows.append(signals_row)
+            group.add_field_values(signals_row)
             if self.use_sample_and_hold:
                 group.sample_and_hold()
 
