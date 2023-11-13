@@ -5,6 +5,9 @@ from cantools import database
 import sys
 from tqdm import tqdm
 from logdata import *
+import os
+import shutil
+
 
 def get_sha(filename):
     sha256_hash = hashlib.sha256()
@@ -111,6 +114,7 @@ class DbcFilter:
 
 class LogExport:
     def __init__(self, dbc_file, dbc_filter,
+                 use_time_grouping=False,
                  signal_renamer=lambda x, y: y,
                  use_sample_and_hold=False,
                  use_relative_time=False,
@@ -119,6 +123,7 @@ class LogExport:
 
         self.dbc = cantools.database.load_file(dbc_file)
         self.dbc_filter = dbc_filter
+        self.use_time_grouping = use_time_grouping
         self.signal_renamer = signal_renamer
         self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
@@ -131,7 +136,10 @@ class LogExport:
                                 unit='frames', file=sys.stdout, ncols=100)
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
-        self.data = LogDataTable(signal_renamer)
+        if use_time_grouping:
+            self.data = LogDataTree(signal_renamer)
+        else:
+            self.data = LogDataTable(signal_renamer)
 
     def process_frame(self, frame, allow_truncated=False):
         self.progressbar.update(1)
@@ -183,6 +191,24 @@ class LogExport:
         print('> Accepted frame count:', self.accepted_frame_count)
 
     def write_csv(self, filepath):
-        group = self.data.group
-        print(f'> Writing CSV file for {group.name}')
-        group.write_csv(filepath, ';', use_group_name=False)
+        multiple_groups = (len(self.data.groups()) > 1)
+
+        if multiple_groups:
+            directory = filepath + '_groups'
+            if os.path.exists(directory):
+                shutil.rmtree(directory)
+            os.mkdir(directory)
+            output_path = f'{directory}/{os.path.basename(filepath)}'
+
+            for group in self.data.groups().values():
+                print(f'> Writing CSV file for group {group.name}')
+                group.write_csv(output_path)
+
+            zip_archive_name = shutil.make_archive(filepath, 'zip', directory)
+            print('Created ZIP archive:', zip_archive_name)
+
+        else:
+            group = self.data.group
+            group.write_csv(filepath, ';', use_group_name=False)
+
+
