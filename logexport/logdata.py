@@ -50,12 +50,19 @@ class LogDataGroup:
 
         return output
 
+    def sample_and_hold(self):
+        if len(self.rows) > 1:
+            for key in self.rows[-2]:
+                if key not in self.rows[-1]:
+                    self.rows[-1][key] = self.rows[-2][key]
+
 
 class LogDataTable:
-    def __init__(self, signal_renamer):
+    def __init__(self, signal_renamer, use_sample_and_hold=False):
         self.signal_renamer = signal_renamer
         self.msg_names = []
         self.group = LogDataGroup(signal_renamer)
+        self.use_sample_and_hold = use_sample_and_hold
 
     def create_fields(self, msg):
         if msg.name in self.msg_names:
@@ -88,6 +95,8 @@ class LogDataTable:
             signals_row['timestamp'] = timestamp
             group = self.find_group(msg)
             group.rows.append(signals_row)
+            if self.use_sample_and_hold:
+                group.sample_and_hold()
 
     def find_group(self, msg, muxvalue=None):
         return self.group

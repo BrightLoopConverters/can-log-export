@@ -23,13 +23,6 @@ def count_lines(file):
     return num_lines
 
 
-def sample_and_hold(rows):
-    if len(rows) > 1:
-        for key in rows[-2]:
-            if key not in rows[-1]:
-                rows[-1][key] = rows[-2][key]
-
-
 class TimestampRecorder:
     def __init__(self, relative):
         self.min = None
@@ -125,7 +118,6 @@ class LogExport:
         self.dbc_filter = dbc_filter
         self.use_time_grouping = use_time_grouping
         self.signal_renamer = signal_renamer
-        self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
         self.target_channel = target_channel
         self.expected_frame_count = expected_frame_count
@@ -139,7 +131,8 @@ class LogExport:
         if use_time_grouping:
             self.data = LogDataTree(signal_renamer)
         else:
-            self.data = LogDataTable(signal_renamer)
+            self.data = LogDataTable(signal_renamer,
+                                     use_sample_and_hold=use_sample_and_hold)
 
     def process_frame(self, frame, allow_truncated=False):
         self.progressbar.update(1)
@@ -173,12 +166,8 @@ class LogExport:
 
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
-        to_write = {'timestamp': self.timestamp_recorder.format(timestamp)}
         self.data.create_fields(msg)
-        self.data.add_field_values(msg, decoded_values, to_write['timestamp'])
-
-        if self.use_sample_and_hold:
-            sample_and_hold(self.data.group.rows)
+        self.data.add_field_values(msg, decoded_values, self.timestamp_recorder.format(timestamp))
 
     def print_info(self):
         self.progressbar.close()
