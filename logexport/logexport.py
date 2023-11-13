@@ -167,7 +167,8 @@ class LogExport:
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
         self.data.create_fields(msg)
-        self.data.add_field_values(msg, decoded_values, self.timestamp_recorder.format(timestamp))
+        self.data.add_field_values(msg, to_keep,
+                                   self.timestamp_recorder.format(timestamp))
 
     def print_info(self):
         self.progressbar.close()
