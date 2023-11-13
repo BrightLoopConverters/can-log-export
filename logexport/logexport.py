@@ -219,9 +219,12 @@ class LogExport:
         print('> Accepted frame count:', self.accepted_frame_count)
 
     def write_csv(self, filepath):
-        multiple_groups = (len(self.data.groups()) > 1)
+        group_count = len(self.data.groups())
 
-        if multiple_groups:
+        if group_count == 0:
+            return
+
+        elif group_count > 1:
             directory = filepath + '_groups'
             if os.path.exists(directory):
                 shutil.rmtree(directory)
@@ -236,7 +239,7 @@ class LogExport:
             print('Created ZIP archive:', zip_archive_name)
 
         else:
-            group = self.data.group
+            group = next(iter(self.data.groups().values()))
             group.write_csv(filepath, ';', use_group_name=False)
 
 
