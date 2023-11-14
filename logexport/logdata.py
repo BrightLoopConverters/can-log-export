@@ -57,9 +57,8 @@ class LogDataGroup:
             writer = csv.DictWriter(csvfile, delimiter=delimiter,
                                     fieldnames=self.fieldnames)
             writer.writeheader()
-            # If the unit line is empty, it is not written to the CSV
-            if self.units:
-                writer.writerows([self.units])
+            # The unit line must be written to the CSV even if it is empty
+            writer.writerows([self.units])
             writer.writerows(self.rows)
 
         return output
