@@ -152,6 +152,7 @@ class LogExport:
                  target_channel=0,
                  expected_frame_count=None):
 
+        self.decode_error = None
         self.dbc = cantools.database.load_file(dbc_file)
         self.dbc_filter = dbc_filter
         self.use_time_grouping = use_time_grouping
@@ -199,7 +200,7 @@ class LogExport:
                                         allow_truncated=allow_truncated,
                                         decode_choices=False)
         except cantools.database.errors.DecodeError as e:
-            print(e)
+            self.decode_error = e
             decoded_values = {}
 
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
@@ -217,6 +218,8 @@ class LogExport:
         print('> Extracted {}/{} frames based on the DBC'
               .format(self.listed_frame_count, self.total_frame_count))
         print('> Accepted frame count:', self.accepted_frame_count)
+        if self.decode_error is not None:
+            print('> Encountered decoding error:', self.decode_error)
 
     def write_csv(self, filepath):
         group_count = len(self.data.groups())
