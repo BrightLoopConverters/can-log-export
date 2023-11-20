@@ -44,7 +44,7 @@ def try_decode_trc(file):
         frame = next(iter(reader))
         print('> Successfully decoded file as TRC')
         return [can.TRCReader, count_lines(file)]
-    except (UnicodeDecodeError, ValueError) as e:
+    except (UnicodeDecodeError, ValueError, StopIteration) as e:
         print('> Failed to decode file as TRC')
         return [None, 0]
 
