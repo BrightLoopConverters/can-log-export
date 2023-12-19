@@ -1,13 +1,27 @@
 from helpers_dchv import *
 from logexport import *
 from time import perf_counter
+from autofile import *
+from pathlib import Path
+
+AUTO_DATA_FILE = True
+DATA_DIR = '../data/'
+DATA_FILE = None
 
 if __name__ == '__main__':
-    data_file = '../data/<relevant data filename>'
-
-    print('> SHA256 of log file: {}'.format(get_sha(data_file)))
+    if AUTO_DATA_FILE:
+        data_file = str(guess_data_file(DATA_DIR))
+    elif DATA_FILE is not None:
+        data_file = str(Path(DATA_DIR, DATA_FILE))
+    else:
+        print('> No data file specified via DATA_FILE for manual selection')
+        exit()
 
     dbc_file = '../dbc/<relevant DBC filename>.dbc'
+
+    print(f'> Data file selected for processing: {data_file}')
+    print('> SHA256 of data file: {}'.format(get_sha(data_file)))
+
     dbc_filter = DbcFilter(accept_all=True)
 
     reader_init = None
