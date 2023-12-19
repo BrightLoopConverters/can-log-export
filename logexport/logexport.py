@@ -104,9 +104,11 @@ class ChannelAnalyzer:
         self.frame_counts[frame.channel] += 1
 
     def guess_channel(self):
-        for channel in self.frame_counts:
-            if channel not in self.mismatch_counts:
-                return channel
+        # The most probable channel is the one with the fewest DLC errors
+        sorted_channels = sorted(self.mismatch_counts,
+                                 key=lambda k: self.mismatch_counts[k])
+        if sorted_channels:
+            return sorted_channels[0]
 
     def analyze(self, frame, msg):
         self.update_channel_count(frame)
