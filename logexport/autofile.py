@@ -6,11 +6,14 @@ from pathlib import Path
 def guess_data_file(dirpath):
     files = possible_files(dirpath, is_possible_data_file)
     files = sorted(files, key=os.path.getctime, reverse=True)
-    result = files[0]
+    result = files[0] if files else None
 
     print(f'> Selecting data file automatically: found {len(files)} candidates in {dirpath}')
-    timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
-    print(f'> Most recent data file: {result.name} (created: {timestr})')
+
+    if result:
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
+        print(f'> Most recent data file: {result.name} (created: {timestr})')
+
     return result
 
 

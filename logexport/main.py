@@ -14,14 +14,17 @@ DBC_FILE = None
 
 if __name__ == '__main__':
     if AUTO_DATA_FILE:
-        data_file = str(guess_data_file(DATA_DIR))
+        data_file = guess_data_file(DATA_DIR)
     elif DATA_FILE is not None:
-        data_file = str(Path(DATA_DIR, DATA_FILE))
+        data_file = Path(DATA_DIR, DATA_FILE)
     else:
         print('> No data file specified via DATA_FILE for manual selection')
         exit()
 
     print(f'> Data file selected for processing: {data_file}')
+    if data_file is None:
+        exit()
+
     print('> SHA256 of data file: {}'.format(get_sha(data_file)))
 
     if AUTO_DBC_FILE:
@@ -62,4 +65,4 @@ if __name__ == '__main__':
 
     export.print_info()
     print(f'> Elapsed time: {round(time_stop - time_start)}s')
-    export.write_csv(data_file)
+    export.write_csv(str(data_file))
