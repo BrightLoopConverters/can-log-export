@@ -86,9 +86,9 @@ class ChannelAnalyzer:
         self.frame_counts = {}
 
     def update_dlc_mismatch(self, frame, msg):
+        if frame.channel not in self.mismatch_counts:
+            self.mismatch_counts[frame.channel] = 0
         if frame.dlc is not msg.length:
-            if frame.channel not in self.mismatch_counts:
-                self.mismatch_counts[frame.channel] = 0
             self.mismatch_counts[frame.channel] += 1
 
             if msg.name not in self.mismatch_values:
