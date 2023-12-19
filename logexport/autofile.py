@@ -13,6 +13,18 @@ def guess_data_file(dirpath):
     print(f'> Most recent data file: {result.name} (created: {timestr})')
     return result
 
+
+def guess_dbc_file(dirpath):
+    files = possible_files(dirpath, is_possible_dbc_file)
+    files = sorted(files, key=os.path.getmtime, reverse=True)
+    result = files[0]
+
+    print(f'> Selecting DBC file automatically: found {len(files)} candidates in {dirpath}')
+    timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
+    print(f'> Most recent DBC file: {result.name} (created: {timestr})')
+    return result
+
+
 def possible_files(dirpath, possible_file_test):
     paths = Path(dirpath).iterdir()
     files = []
@@ -34,3 +46,7 @@ def possible_files(dirpath, possible_file_test):
 def is_possible_data_file(p):
     # Retain files that are neither zip nor .gitignore
     return p.is_file() and p.suffix != '.zip' and p.suffix != '.csv' and not p.stem.startswith('.')
+
+
+def is_possible_dbc_file(p):
+    return p.is_file and p.suffix == '.dbc'
