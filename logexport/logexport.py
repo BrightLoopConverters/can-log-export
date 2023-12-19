@@ -121,15 +121,15 @@ class DbcFilter:
             fully_accepted = {}
         if partly_accepted is None:
             partly_accepted = {}
-            
+
         self.accept_all = accept_all
         self.fully_accepted = fully_accepted
         self.partly_accepted = partly_accepted
 
     def is_message_accepted(self, message):
-        return self.accept_all\
-               or (message.name in self.fully_accepted) \
-               or (message.name in self.partly_accepted.keys())
+        return self.accept_all \
+            or (message.name in self.fully_accepted) \
+            or (message.name in self.partly_accepted.keys())
 
     def keep_accepted_signals(self, message, signal_values):
         accepted_signal_names = {}
@@ -146,6 +146,9 @@ class DbcFilter:
 
 
 class LogExport:
+    class AutoChannelRepr:
+        def __repr__(self): return 'AutoChannel'
+
     def __init__(self, dbc_file, dbc_filter,
                  use_time_grouping=False,
                  signal_renamer=lambda x, y: y,
@@ -159,6 +162,7 @@ class LogExport:
         self.dbc_filter = dbc_filter
         self.use_time_grouping = use_time_grouping
         self.signal_renamer = signal_renamer
+        self.use_sample_and_hold = use_sample_and_hold
         self.use_relative_time = use_relative_time
         self.target_channel = target_channel
         self.expected_frame_count = expected_frame_count
@@ -166,14 +170,20 @@ class LogExport:
         self.listed_frame_count = 0
         self.accepted_frame_count = 0
         self.progressbar = tqdm(total=expected_frame_count, desc='> Processing frames',
-                                unit='frames', file=sys.stdout, ncols=100)
+                                unit=' frames', file=sys.stdout, ncols=100)
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
-        if use_time_grouping:
-            self.data = LogDataTree(signal_renamer)
+        self.data = {}
+
+    def initialize_log_data(self, channel):
+        if channel in self.data:
+            return
+
+        if self.use_time_grouping:
+            self.data[channel] = LogDataTree(self.signal_renamer)
         else:
-            self.data = LogDataTable(signal_renamer,
-                                     use_sample_and_hold=use_sample_and_hold)
+            self.data[channel] = LogDataTable(self.signal_renamer,
+                                              use_sample_and_hold=self.use_sample_and_hold)
 
     def process_frame(self, frame, allow_truncated=False):
         self.progressbar.update(1)
@@ -182,20 +192,19 @@ class LogExport:
             msg = self.dbc.get_message_by_frame_id(frame.arbitration_id)
         except KeyError:
             return
-        self.process_message(frame, msg, allow_truncated)
 
-    def process_message(self, frame, msg, allow_truncated):
         self.listed_frame_count += 1
         self.channel_analyzer.analyze(frame, msg)
-        timestamp = self.timestamp_recorder.record(frame)
 
-        if frame.channel is not self.target_channel:
-            return
+        if frame.channel is self.target_channel or self.target_channel is AutoChannel:
+            self.process_message(frame, msg, allow_truncated)
 
+    def process_message(self, frame, msg, allow_truncated):
         if not self.dbc_filter.is_message_accepted(msg):
             return
 
         self.accepted_frame_count += 1
+        timestamp = self.timestamp_recorder.record(frame)
 
         try:
             decoded_values = msg.decode(frame.data,
@@ -207,16 +216,18 @@ class LogExport:
 
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
-        self.data.create_fields(msg)
-        self.data.add_field_values(msg, to_keep,
-                                   self.timestamp_recorder.format(timestamp))
+        self.initialize_log_data(frame.channel)
+        data = self.data[frame.channel]
+        data.create_fields(msg)
+        data.add_field_values(msg, to_keep, self.timestamp_recorder.format(timestamp))
 
     def print_info(self):
+        self.progressbar.update(self.progressbar.total)
         self.progressbar.close()
         print('> Time range of the frames is from {} to {}'
               .format(self.timestamp_recorder.min, self.timestamp_recorder.max))
-        print('> Specified channel:', self.target_channel)
-        print('> Most likely channel:', self.channel_analyzer.guess_channel())
+        print(f'> Channel specified: {self.target_channel}'
+              f' / Most likely: Channel {self.channel_analyzer.guess_channel()}')
         print('> Extracted {}/{} frames based on the DBC'
               .format(self.listed_frame_count, self.total_frame_count))
         print('> Accepted frame count:', self.accepted_frame_count)
@@ -224,7 +235,17 @@ class LogExport:
             print('> Encountered decoding error:', self.decode_error)
 
     def write_csv(self, filepath):
-        group_count = len(self.data.groups())
+        if not self.data:
+            return
+
+        if self.target_channel is AutoChannel:
+            channel = self.channel_analyzer.guess_channel()
+            print(f'> AutoChannel selection result: Channel {channel}')
+        else:
+            channel = self.target_channel
+
+        groups = self.data[channel].groups()
+        group_count = len(groups)
 
         if group_count == 0:
             return
@@ -236,7 +257,7 @@ class LogExport:
             os.mkdir(directory)
             output_path = f'{directory}/{os.path.basename(filepath)}'
 
-            for group in self.data.groups().values():
+            for group in groups.values():
                 print(f'> Writing CSV file for group {group.name}')
                 group.write_csv(output_path)
 
@@ -244,7 +265,8 @@ class LogExport:
             print('Created ZIP archive:', zip_archive_name)
 
         else:
-            group = next(iter(self.data.groups().values()))
+            group = next(iter(groups.values()))
             group.write_csv(filepath, ';', use_group_name=False)
 
 
+AutoChannel = LogExport.AutoChannelRepr()

@@ -1,6 +1,6 @@
-import can
 from helpers_dchv import *
 from logexport import *
+from time import perf_counter
 
 if __name__ == '__main__':
     data_file = '../data/<relevant data filename>'
@@ -24,13 +24,16 @@ if __name__ == '__main__':
     export = LogExport(dbc_file, dbc_filter,
                        signal_renamer=dchv_shortname,
                        use_time_grouping=True,
-                       target_channel=0,
+                       target_channel=AutoChannel,
                        expected_frame_count=count,
                        use_sample_and_hold=False)
 
+    time_start = perf_counter()
     reader = reader_init(data_file)
     for frame in reader:
         export.process_frame(frame, allow_truncated=True)
+    time_stop = perf_counter()
 
     export.print_info()
+    print(f'> Elapsed time: {round(time_stop - time_start)}s')
     export.write_csv(data_file)
