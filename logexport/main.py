@@ -12,18 +12,19 @@ AUTO_DBC_FILE = True
 DBC_DIR = '../dbc/'
 DBC_FILE = None
 
-if __name__ == '__main__':
+
+def run():
     if AUTO_DATA_FILE:
         data_file = guess_data_file(DATA_DIR)
     elif DATA_FILE is not None:
         data_file = Path(DATA_DIR, DATA_FILE)
     else:
         print('> No data file specified via DATA_FILE for manual selection')
-        exit()
+        return
 
     print(f'> Data file selected for processing: {data_file}')
     if data_file is None:
-        exit()
+        return
 
     print('> SHA256 of data file: {}'.format(get_sha(data_file)))
 
@@ -33,7 +34,7 @@ if __name__ == '__main__':
         dbc_file = Path(DBC_DIR, DBC_FILE)
     else:
         print('> No DBC file specified via DBC_FILE for manual selection')
-        exit()
+        return
 
     print(f'> DBC file selected to decode CAN frames: {dbc_file}')
 
@@ -66,3 +67,7 @@ if __name__ == '__main__':
     export.print_info()
     print(f'> Elapsed time: {round(time_stop - time_start)}s')
     export.write_csv(str(data_file))
+
+
+if __name__ == '__main__':
+    run()
