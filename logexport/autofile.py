@@ -13,18 +13,19 @@ def guess_data_file(dirpath):
     if result:
         timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
         print(f'> Most recent data file: {result.name} (created: {timestr})')
-
     return result
 
 
 def guess_dbc_file(dirpath):
     files = possible_files(dirpath, is_possible_dbc_file)
     files = sorted(files, key=os.path.getmtime, reverse=True)
-    result = files[0]
+    result = files[0] if files else None
 
     print(f'> Selecting DBC file automatically: found {len(files)} candidates in {dirpath}')
-    timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
-    print(f'> Most recent DBC file: {result.name} (created: {timestr})')
+
+    if result:
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(result.stat().st_ctime))
+        print(f'> Most recent DBC file: {result.name} (created: {timestr})')
     return result
 
 

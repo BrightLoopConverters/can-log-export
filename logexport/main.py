@@ -37,6 +37,8 @@ def run():
         return
 
     print(f'> DBC file selected to decode CAN frames: {dbc_file}')
+    if dbc_file is None:
+        return
 
     dbc_filter = DbcFilter(accept_all=True)
 
