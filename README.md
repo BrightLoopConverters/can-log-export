@@ -1,4 +1,24 @@
-This Python utility is distributed as a project for the PyCharm IDE.
+## Basic Usage
+
+### 1. Place the Files
+
+- Put the data file (`.blf`, `.trc` or `.asc`) in the `data` folder.
+- Put the `.dbc` file in the `dbc` folder.
+
+### 2. Run the Script
+
+- Execute `main.py`.
+- This script will generate a `.zip` file containing several `.csv` files.
+
+### 3. Retrieve the Results
+
+- The generated `.csv` files will be located in the `data` subfolder along with the container `.zip` file.
+
+## Advanced Features
+
+### PyCharm Support
+
+This Python utility includes all the necessary files to run it as a project in the PyCharm IDE.
 
 ### Data Source Filtering
 
