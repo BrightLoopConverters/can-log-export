@@ -20,7 +20,7 @@ def get_sha(filename):
 
 
 def count_lines(file):
-    with open(file, "rbU") as f:
+    with open(file, "rb") as f:
         num_lines = sum(1 for _ in f)
     return num_lines
 
