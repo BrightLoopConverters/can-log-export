@@ -43,6 +43,7 @@ def run():
     dbc_filter = DbcFilter(accept_all=True)
 
     reader_init = None
+    count = 0
 
     if reader_init is None:
         [reader_init, count] = try_decode_asc(data_file)
