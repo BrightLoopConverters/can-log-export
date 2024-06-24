@@ -234,7 +234,9 @@ class LogExport:
         if self.decode_error is not None:
             print('> Encountered decoding error:', self.decode_error)
 
-    def write_csv(self, filepath):
+    def write_csv(self, output_dir, data_file):
+        output_path = Path(output_dir, Path(data_file).name)
+
         if not self.data:
             return
 
@@ -251,7 +253,7 @@ class LogExport:
             return
 
         elif group_count > 1:
-            directory = Path(filepath + '_groups')
+            directory = Path(data_file + '_groups')
             if directory.exists():
                 shutil.rmtree(directory)
             directory.mkdir()
@@ -260,12 +262,15 @@ class LogExport:
                 print(f'> Writing CSV file for group {group.name}')
                 group.write_csv(directory)
 
-            zip_archive_name = shutil.make_archive(filepath, 'zip', directory)
-            print('Created ZIP archive:', zip_archive_name)
+            zip_archive_name = shutil.make_archive(output_path, 'zip', directory)
+            print(f'> Created ZIP archive: {zip_archive_name}')
+            return zip_archive_name
 
         else:
             group = next(iter(groups.values()))
-            group.write_csv(filepath, ';', use_group_name=False)
+            csv_name = group.write_csv(output_path, ';').resolve()
+            print(f'> Created CSV file: {csv_name}')
+            return str(csv_name)
 
 
 AutoChannel = LogExport.AutoChannelRepr()

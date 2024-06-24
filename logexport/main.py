@@ -12,6 +12,8 @@ AUTO_DBC_FILE = True
 DBC_DIR = '../dbc/'
 DBC_FILE = ''
 
+OUTPUT_DIR = '../output/'
+
 
 def run():
     if AUTO_DATA_FILE:
@@ -69,7 +71,12 @@ def run():
 
     export.print_info()
     print(f'> Elapsed time: {round(time_stop - time_start)}s')
-    export.write_csv(str(data_file))
+    output_file = export.write_csv(OUTPUT_DIR, str(data_file))
+
+    if output_file:
+        report_path = Path(OUTPUT_DIR, 'report.txt')
+        with open(report_path, 'w') as report:
+            report.write(output_file)
 
 
 if __name__ == '__main__':

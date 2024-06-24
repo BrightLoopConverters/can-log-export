@@ -37,7 +37,7 @@ class LogDataGroup:
         for fieldname in decoded_values:
             self.counts[fieldname] += 1
 
-    def write_csv(self, filepath, delimiter=',', use_group_name=True):
+    def write_csv(self, output_path, delimiter=','):
         # Columns containing no values due to the applied filtering are removed
         # from the list of fields to be written in the CSV.
         for fieldname in self.counts:
@@ -46,12 +46,10 @@ class LogDataGroup:
                 if fieldname in self.units:
                     del self.units[fieldname]
 
-        directory = filepath
-
-        if use_group_name:
-            output = Path(directory, self.name + '.csv')
+        if output_path.is_dir():
+            output = Path(output_path, self.name + '.csv')
         else:
-            output = Path(directory + '.csv')
+            output = Path(output_path.parent, output_path.name + '.csv')
 
         with open(output, 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, delimiter=delimiter,
