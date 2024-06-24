@@ -1,5 +1,5 @@
 import csv
-import os.path
+from pathlib import Path
 
 
 # Constructs a new time base name from the message name and the value of the
@@ -46,12 +46,12 @@ class LogDataGroup:
                 if fieldname in self.units:
                     del self.units[fieldname]
 
-        directory = os.path.dirname(filepath)
+        directory = filepath
 
         if use_group_name:
-            output = os.path.join(directory, self.name + '.csv')
+            output = Path(directory, self.name + '.csv')
         else:
-            output = filepath + '.csv'
+            output = Path(directory + '.csv')
 
         with open(output, 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, delimiter=delimiter,

@@ -7,7 +7,7 @@ from cantools import database
 import sys
 from tqdm import tqdm
 from logdata import *
-import os
+from pathlib import Path
 import shutil
 
 
@@ -251,15 +251,14 @@ class LogExport:
             return
 
         elif group_count > 1:
-            directory = filepath + '_groups'
-            if os.path.exists(directory):
+            directory = Path(filepath + '_groups')
+            if directory.exists():
                 shutil.rmtree(directory)
-            os.mkdir(directory)
-            output_path = f'{directory}/{os.path.basename(filepath)}'
+            directory.mkdir()
 
             for group in groups.values():
                 print(f'> Writing CSV file for group {group.name}')
-                group.write_csv(output_path)
+                group.write_csv(directory)
 
             zip_archive_name = shutil.make_archive(filepath, 'zip', directory)
             print('Created ZIP archive:', zip_archive_name)
