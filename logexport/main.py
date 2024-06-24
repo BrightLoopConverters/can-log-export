@@ -6,38 +6,38 @@ from pathlib import Path
 
 AUTO_DATA_FILE = True
 DATA_DIR = '../data/'
-DATA_FILE = None
+DATA_FILE = ''
 
 AUTO_DBC_FILE = True
 DBC_DIR = '../dbc/'
-DBC_FILE = None
+DBC_FILE = ''
 
 
 def run():
     if AUTO_DATA_FILE:
         data_file = guess_data_file(DATA_DIR)
-    elif DATA_FILE is not None:
+    elif not DATA_FILE:
         data_file = Path(DATA_DIR, DATA_FILE)
     else:
         print('> No data file specified via DATA_FILE for manual selection')
         return
 
     print(f'> Data file selected for processing: {data_file}')
-    if data_file is None:
+    if not data_file:
         return
 
     print('> SHA256 of data file: {}'.format(get_sha(data_file)))
 
     if AUTO_DBC_FILE:
         dbc_file = guess_dbc_file(DBC_DIR)
-    elif DBC_FILE is not None:
+    elif not DBC_FILE:
         dbc_file = Path(DBC_DIR, DBC_FILE)
     else:
         print('> No DBC file specified via DBC_FILE for manual selection')
         return
 
     print(f'> DBC file selected to decode CAN frames: {dbc_file}')
-    if dbc_file is None:
+    if not dbc_file:
         return
 
     dbc_filter = DbcFilter(accept_all=True)
