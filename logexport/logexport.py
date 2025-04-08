@@ -260,6 +260,7 @@ class LogExport:
 
             for group in groups.values():
                 print(f'> Writing CSV file for group {group.name}')
+                group.remove_empty_columns()
                 group.write_csv(directory)
 
             zip_archive_name = shutil.make_archive(output_path, 'zip', directory)

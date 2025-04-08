@@ -37,15 +37,18 @@ class LogDataGroup:
         for fieldname in decoded_values:
             self.counts[fieldname] += 1
 
-    def write_csv(self, output_path, delimiter=','):
+    def remove_empty_columns(self):
         # Columns containing no values due to the applied filtering are removed
-        # from the list of fields to be written in the CSV.
+        # from the list of fields to be written in the CSV. Some columns may
+        # also be initially created for a given multiplexer value but remain
+        # empty if the message is never transmitted with that value.
         for fieldname in self.counts:
             if self.counts[fieldname] == 0:
                 self.fieldnames.remove(fieldname)
                 if fieldname in self.units:
                     del self.units[fieldname]
 
+    def write_csv(self, output_path, delimiter=','):
         if output_path.is_dir():
             output = Path(output_path, self.name + '.csv')
         else:
