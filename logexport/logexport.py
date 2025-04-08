@@ -226,27 +226,30 @@ class LogExport:
         self.progressbar.close()
         print('> Time range of the frames is from {} to {}'
               .format(self.timestamp_recorder.min, self.timestamp_recorder.max))
-        print(f'> Channel specified: {self.target_channel}'
-              f' / Most likely: Channel {self.channel_analyzer.guess_channel()}')
         print('> Extracted {}/{} frames based on the DBC'
               .format(self.listed_frame_count, self.total_frame_count))
+        print(f'> Channel specified: {self.target_channel}')
+        if self.target_channel is AutoChannel:
+            print(f'> AutoChannel selection result: Channel {self.channel_analyzer.guess_channel()}')
         print('> Accepted frame count:', self.accepted_frame_count)
         if self.decode_error is not None:
             print('> Encountered decoding error:', self.decode_error)
 
-    def write_csv(self, output_dir, data_file):
-        output_path = Path(output_dir, Path(data_file).name)
-
+    def get_active_groups(self):
         if not self.data:
-            return
+            return {}
 
         if self.target_channel is AutoChannel:
             channel = self.channel_analyzer.guess_channel()
-            print(f'> AutoChannel selection result: Channel {channel}')
         else:
             channel = self.target_channel
 
-        groups = self.data[channel].groups()
+        return self.data[channel].groups()
+
+    def write_csv(self, output_dir, data_file):
+        output_path = Path(output_dir, Path(data_file).name)
+
+        groups = self.get_active_groups()
         group_count = len(groups)
 
         if group_count == 0:
