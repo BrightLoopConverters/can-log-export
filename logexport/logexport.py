@@ -1,4 +1,5 @@
 import hashlib
+import json
 from datetime import datetime
 
 import can
@@ -275,6 +276,19 @@ class LogExport:
             csv_name = group.write_csv(output_path, ';').resolve()
             print(f'> Created CSV file: {csv_name}')
             return str(csv_name)
+
+    def write_signals_json(self, output_dir, filename):
+        groups = self.get_active_groups()
+        signal_set = set()
+
+        for group in groups.values():
+            signal_set.update(group.fieldnames)
+        signal_set.discard('timestamp')
+        signal_list = sorted(signal_set)
+
+        signals_path = Path(output_dir, filename)
+        with open(signals_path, 'w') as signals_file:
+            json.dump(signal_list, signals_file, indent=2)
 
 
 AutoChannel = LogExport.AutoChannelRepr()
