@@ -8,8 +8,15 @@ from cantools import database
 import sys
 from tqdm import tqdm
 from logdata import *
+from crc_verifier import *
 from pathlib import Path
 import shutil
+
+
+def print_warning(warning):
+    warncolor = '\033[95m'
+    endcolor = '\033[0m'
+    print(f'> {warncolor}{warning}{endcolor}')
 
 
 def get_sha(filename):
@@ -175,6 +182,7 @@ class LogExport:
         self.channel_analyzer = ChannelAnalyzer()
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
         self.data = {}
+        self.crc_verifier = CrcVerifier()
 
     def initialize_log_data(self, channel):
         if channel in self.data:
@@ -199,6 +207,7 @@ class LogExport:
 
         if frame.channel is self.target_channel or self.target_channel is AutoChannel:
             self.process_message(frame, msg, allow_truncated)
+            self.crc_verifier.check_frame(frame, msg)
 
     def process_message(self, frame, msg, allow_truncated):
         if not self.dbc_filter.is_message_accepted(msg):
@@ -246,6 +255,13 @@ class LogExport:
             channel = self.target_channel
 
         return self.data[channel].groups()
+
+    def write_crc_report(self, output_dir, filename):
+        if self.crc_verifier.count > 0:
+            print_warning(f'Detected {self.crc_verifier.count} frame(s) with incorrect NCrc values')
+            filepath = Path(output_dir, filename)
+            self.crc_verifier.write_json_report(filepath)
+            print(f'> CRC verification report written to: {filepath}')
 
     def write_csv(self, output_dir, data_file):
         output_path = Path(output_dir, Path(data_file).name)

@@ -78,8 +78,8 @@ def run():
         with open(report_path, 'w') as report:
             report.write(output_file)
 
-    export.write_signals_json(OUTPUT_DIR,
-                              'exported_signals.json')
+    export.write_signals_json(OUTPUT_DIR,'exported_signals.json')
+    export.write_crc_report(OUTPUT_DIR, 'crc_report.json')
 
 
 if __name__ == '__main__':
