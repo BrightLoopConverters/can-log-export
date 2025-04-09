@@ -18,7 +18,7 @@ OUTPUT_DIR = '../output/'
 def run():
     if AUTO_DATA_FILE:
         data_file = guess_data_file(DATA_DIR)
-    elif not DATA_FILE:
+    elif DATA_FILE:
         data_file = Path(DATA_DIR, DATA_FILE)
     else:
         print('> No data file specified via DATA_FILE for manual selection')
@@ -32,7 +32,7 @@ def run():
 
     if AUTO_DBC_FILE:
         dbc_file = guess_dbc_file(DBC_DIR)
-    elif not DBC_FILE:
+    elif DBC_FILE:
         dbc_file = Path(DBC_DIR, DBC_FILE)
     else:
         print('> No DBC file specified via DBC_FILE for manual selection')
