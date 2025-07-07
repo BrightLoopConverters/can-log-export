@@ -1,3 +1,5 @@
 *.csv
 *.zip
 report.txt
+crc_report.json
+exported_signals.json
