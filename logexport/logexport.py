@@ -164,7 +164,13 @@ class LogExport:
                  use_relative_time=False,
                  target_channel=0,
                  expected_frame_count=None):
-
+        """
+        Keyword arguments:
+        target_channel -- Most logging formats include a "channel" field
+        indicating the CAN interface that recorded each frame. ASC logs use
+        1-based channel numbering, but this tool shifts channels to 0-based
+        numbering during export.
+        """
         self.decode_error = None
         self.dbc = cantools.database.load_file(dbc_file)
         self.dbc_filter = dbc_filter
