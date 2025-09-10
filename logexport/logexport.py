@@ -8,9 +8,10 @@ from cantools import database
 import sys
 from tqdm import tqdm
 from logdata import *
-from crc_verifier import *
 from pathlib import Path
 import shutil
+from crc_verifier import *
+from mux_verifier import *
 
 
 def print_warning(warning):
@@ -189,6 +190,7 @@ class LogExport:
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
         self.data = {}
         self.crc_verifier = CrcVerifier()
+        self.frame_listeners = [MuxVerifier()]
 
     def initialize_log_data(self, channel):
         if channel in self.data:
@@ -212,7 +214,7 @@ class LogExport:
         self.channel_analyzer.analyze(frame, msg)
 
         if frame.channel is self.target_channel or self.target_channel is AutoChannel:
-            self.process_message(frame, msg, allow_truncated)
+            self.decode_error = self.process_message(frame, msg, allow_truncated)
             self.crc_verifier.check_frame(frame, msg)
 
     def process_message(self, frame, msg, allow_truncated):
@@ -222,13 +224,16 @@ class LogExport:
         self.accepted_frame_count += 1
         timestamp = self.timestamp_recorder.record(frame)
 
+        error = None
         try:
             decoded_values = msg.decode(frame.data,
                                         allow_truncated=allow_truncated,
                                         decode_choices=False)
         except cantools.database.errors.DecodeError as e:
-            self.decode_error = e
+            error = e
             decoded_values = {}
+
+        self._notify_listeners(frame, msg, decoded_values, error)
 
         to_keep = self.dbc_filter.keep_accepted_signals(msg, decoded_values)
 
@@ -236,6 +241,7 @@ class LogExport:
         data = self.data[frame.channel]
         data.create_fields(msg)
         data.add_field_values(msg, to_keep, self.timestamp_recorder.format(timestamp))
+        return error
 
     def print_info(self):
         self.progressbar.update(self.progressbar.total)
@@ -311,6 +317,13 @@ class LogExport:
         signals_path = Path(output_dir, filename)
         with open(signals_path, 'w') as signals_file:
             json.dump(signal_list, signals_file, indent=2)
+
+    def add_listener(self, listener) -> None:
+        self.frame_listeners.append(listener)
+
+    def _notify_listeners(self, frame, message, decoded_values, error) -> None:
+        for listener in self.frame_listeners:
+            listener.process_frame(frame, message, decoded_values, error)
 
 
 AutoChannel = LogExport.AutoChannelRepr()

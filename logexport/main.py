@@ -80,6 +80,7 @@ def run():
 
     export.write_signals_json(OUTPUT_DIR,'exported_signals.json')
     export.write_crc_report(OUTPUT_DIR, 'crc_report.json')
+    export.frame_listeners[0].write_report(OUTPUT_DIR, 'mux_report.json')
 
 
 if __name__ == '__main__':
