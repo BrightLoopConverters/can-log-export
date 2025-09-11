@@ -12,6 +12,7 @@ from pathlib import Path
 import shutil
 from crc_verifier import *
 from mux_verifier import *
+from rolling_counter_verifier import *
 
 
 def print_warning(warning):
@@ -190,7 +191,7 @@ class LogExport:
         self.timestamp_recorder = TimestampRecorder(use_relative_time)
         self.data = {}
         self.crc_verifier = CrcVerifier()
-        self.frame_listeners = [MuxVerifier()]
+        self.frame_listeners = [MuxVerifier(), RollingCounterVerifier()]
 
     def initialize_log_data(self, channel):
         if channel in self.data:
