@@ -14,7 +14,7 @@ class RollingCounterVerifier:
 
     def __init__(self):
         self.count = 0
-        self.previous_counter = None
+        self.previous_counters = {}
         self.counter_errors = {}
         pass
 
@@ -26,13 +26,13 @@ class RollingCounterVerifier:
         new_counter = decoded_values['NCounter']
 
         # Initialize the counter the first time with the first value found
-        if self.previous_counter is None:
-            self.previous_counter = new_counter
+        if msg.frame_id not in self.previous_counters:
+            self.previous_counters[msg.frame_id] = new_counter
             return
 
         # No error if the counter value is different from the previous
-        if self.previous_counter != new_counter:
-            self.previous_counter = new_counter
+        if self.previous_counters[msg.frame_id] != new_counter:
+            self.previous_counters[msg.frame_id] = new_counter
             return
 
         # Record the error if the counter value has remained the same
@@ -55,12 +55,10 @@ class RollingCounterVerifier:
                 counter_signal_errors = message_errors['NCounter']
                 formatted_errors = []
                 for counter_value, frame_count in counter_signal_errors.items():
-                    formatted_errors.append(
-                        {
-                            'NCounter': counter_value,
-                            'repeated_frames': frame_count
-                        }
-                    )
+                    formatted_errors.append({
+                        'NCounter': counter_value,
+                        'repeated_frames': frame_count
+                    })
                 entry = {'message': message_name}
                 entry.update({'errors': formatted_errors})
                 report.append(entry)
