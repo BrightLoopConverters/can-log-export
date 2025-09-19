@@ -1,4 +1,4 @@
-from helpers_dchv import *
+from helpers_hvhv import *
 from logexport import *
 from time import perf_counter
 from autofile import *
@@ -57,7 +57,7 @@ def run():
         raise ValueError('Could not decode provided log file')
 
     export = LogExport(dbc_file, dbc_filter,
-                       signal_renamer=dchv_shortname,
+                       signal_renamer=hvhv_shortname,
                        use_time_grouping=True,
                        target_channel=AutoChannel,
                        expected_frame_count=count,
